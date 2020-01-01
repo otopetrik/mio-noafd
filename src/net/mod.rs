@@ -10,9 +10,11 @@
 mod tcp;
 pub use self::tcp::{TcpKeepalive, TcpListener, TcpSocket, TcpStream};
 
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "wasi")))]
 mod udp;
-#[cfg(not(windows))]
+#[cfg(not(any(windows, target_os = "wasi")))]
+mod udp;
+#[cfg(not(target_os = "wasi"))]
 pub use self::udp::UdpSocket;
 #[cfg(windows)]
 pub use crate::sys::udp::UdpSocket;
