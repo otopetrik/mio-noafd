@@ -19,7 +19,7 @@ use crate::sys;
 /// The socket will be closed when the value is dropped.
 #[derive(Debug)]
 pub struct TcpSocket {
-    sys: sys::tcp::TcpSocket,
+    pub sys: sys::tcp::TcpSocket,
 }
 
 /// Configures a socket's TCP keepalive parameters.
@@ -60,14 +60,6 @@ impl TcpSocket {
         sys::tcp::new_v6_socket().map(|sys| TcpSocket { sys })
     }
 
-    pub(crate) fn new_for_addr(addr: SocketAddr) -> io::Result<TcpSocket> {
-        if addr.is_ipv4() {
-            TcpSocket::new_v4()
-        } else {
-            TcpSocket::new_v6()
-        }
-    }
-
     /// Bind `addr` to the TCP socket.
     pub fn bind(&self, addr: SocketAddr) -> io::Result<()> {
         sys::tcp::bind(self.sys, addr)
@@ -78,12 +70,20 @@ impl TcpSocket {
     /// This consumes the socket and performs the connect operation. Once the
     /// connection completes, the socket is now a non-blocking `TcpStream` and
     /// can be used as such.
+    #[cfg(not(windows))]
     pub fn connect(self, addr: SocketAddr) -> io::Result<TcpStream> {
         let stream = sys::tcp::connect(self.sys, addr)?;
 
         // Don't close the socket
         mem::forget(self);
         Ok(TcpStream::from_std(stream))
+    }
+
+    #[cfg(windows)]
+    pub fn connect(self, addr: SocketAddr) -> io::Result<TcpStream> {
+        let handle = self.sys;
+        mem::forget(self);
+        sys::tcp::TcpStream::connect_mio(handle, addr)
     }
 
     /// Listen for inbound connections, converting the socket to a

@@ -192,7 +192,6 @@ impl Event {
 /// [alternate]: fmt::Formatter::alternate
 impl fmt::Debug for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let alternate = f.alternate();
         let mut d = f.debug_struct("Event");
         d.field("token", &self.token())
             .field("readable", &self.is_readable())
@@ -202,20 +201,7 @@ impl fmt::Debug for Event {
             .field("write_closed", &self.is_write_closed())
             .field("priority", &self.is_priority())
             .field("aio", &self.is_aio())
-            .field("lio", &self.is_lio());
-
-        if alternate {
-            struct EventDetails<'a>(&'a sys::Event);
-
-            impl<'a> fmt::Debug for EventDetails<'a> {
-                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                    sys::event::debug_details(f, self.0)
-                }
-            }
-
-            d.field("details", &EventDetails(&self.inner)).finish()
-        } else {
-            d.finish()
-        }
+            .field("lio", &self.is_lio())
+            .finish()
     }
 }

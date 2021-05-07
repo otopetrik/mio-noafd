@@ -8,10 +8,14 @@
 //! [portability guidelines]: ../struct.Poll.html#portability
 
 mod tcp;
-pub use self::tcp::{TcpListener, TcpSocket, TcpStream, TcpKeepalive};
+pub use self::tcp::{TcpKeepalive, TcpListener, TcpSocket, TcpStream};
 
+#[cfg(not(windows))]
 mod udp;
+#[cfg(not(windows))]
 pub use self::udp::UdpSocket;
+#[cfg(windows)]
+pub use crate::sys::udp::UdpSocket;
 
 #[cfg(unix)]
 mod uds;

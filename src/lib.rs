@@ -1,6 +1,6 @@
 #![doc(html_root_url = "https://docs.rs/mio/0.7.11")]
 #![deny(
-    missing_docs,
+    // missing_docs,
     missing_debug_implementations,
     rust_2018_idioms,
     unused_imports,
@@ -45,9 +45,10 @@
 #[macro_use]
 mod macros;
 
+#[macro_use]
+mod sys;
 mod interest;
 mod poll;
-mod sys;
 mod token;
 mod waker;
 

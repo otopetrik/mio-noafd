@@ -50,6 +50,8 @@ pipe = ["os-ext"] # Replaced with "os-ext" feature.
 os-util = ["os-ext"]# Replaced with "os-ext" feature.
 
 [dependencies]
+iovec = "0.1.2"
+net2  = "0.2.33"
 log = "0.4.8"
 
 [target.'cfg(unix)'.dependencies]
