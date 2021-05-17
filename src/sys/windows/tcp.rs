@@ -136,7 +136,7 @@ impl TcpStream {
 
     pub(crate) fn connect_mio(socket: TcpSocket, addr: SocketAddr) -> io::Result<TcpStream> {
         // TODO: Safety
-        let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as u64) };
+        let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as RawSocket) };
         os_socket.set_nonblocking(true)?;
         Ok(TcpStream::new(os_socket, Some(addr)))
         // let socket = os_socket.into_raw_socket();
@@ -146,7 +146,7 @@ impl TcpStream {
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
         let socket = new_for_addr(addr)?;
         // TODO: Safety
-        let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as u64) };
+        let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as RawSocket) };
         os_socket.set_nonblocking(true)?;
         let socket = os_socket.into_raw_socket();
         connect(socket as usize, addr).map(|s| TcpStream::new(s, Some(addr)))
