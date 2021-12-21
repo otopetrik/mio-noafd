@@ -63,19 +63,70 @@ pub struct NamedPipe {
     inner: Arc<Inner>,
 }
 
+/// # Notes
+///
+/// The memory layout of this structure must be fixed as the
+/// `ptr_from_*_overlapped` methods depend on it, see the `ptr_from` test.
 #[repr(C)]
 struct Inner {
-    handle: pipe::NamedPipe,
-
+    // NOTE: careful modifying the order of these three fields, the `ptr_from_*`
+    // methods depend on the layout!
     connect: Overlapped,
-    connecting: AtomicBool,
-
     read: Overlapped,
     write: Overlapped,
-
+    // END NOTE.
+    handle: pipe::NamedPipe,
+    connecting: AtomicBool,
     io: Mutex<Io>,
-
     pool: Mutex<BufferPool>,
+}
+
+impl Inner {
+    /// Converts a pointer to `Inner.connect` to a pointer to `Inner`.
+    ///
+    /// # Unsafety
+    ///
+    /// Caller must ensure `ptr` is pointing to `Inner.connect`.
+    unsafe fn ptr_from_conn_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `connect` is the first field, so the pointer are the same.
+        ptr.cast()
+    }
+
+    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.read`.
+    unsafe fn ptr_from_read_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `read` is after `connect: Overlapped`.
+        (ptr as *mut Overlapped).wrapping_sub(1) as *const Inner
+    }
+
+    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.write`.
+    unsafe fn ptr_from_write_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
+        // `read` is after `connect: Overlapped` and `read: Overlapped`.
+        (ptr as *mut Overlapped).wrapping_sub(2) as *const Inner
+    }
+}
+
+#[test]
+fn ptr_from() {
+    use std::mem::ManuallyDrop;
+    use std::ptr;
+
+    let pipe = unsafe { ManuallyDrop::new(NamedPipe::from_raw_handle(ptr::null_mut())) };
+    let inner: &Inner = &pipe.inner;
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_conn_overlapped(&inner.connect as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_conn_overlapped` incorrect"
+    );
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_read_overlapped(&inner.read as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_read_overlapped` incorrect"
+    );
+    assert_eq!(
+        inner as *const Inner,
+        unsafe { Inner::ptr_from_write_overlapped(&inner.write as *const _ as *mut OVERLAPPED) },
+        "`ptr_from_write_overlapped` incorrect"
+    );
 }
 
 struct Io {
