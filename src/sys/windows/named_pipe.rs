@@ -81,30 +81,6 @@ struct Inner {
     pool: Mutex<BufferPool>,
 }
 
-impl Inner {
-    /// Converts a pointer to `Inner.connect` to a pointer to `Inner`.
-    ///
-    /// # Unsafety
-    ///
-    /// Caller must ensure `ptr` is pointing to `Inner.connect`.
-    unsafe fn ptr_from_conn_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
-        // `connect` is the first field, so the pointer are the same.
-        ptr.cast()
-    }
-
-    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.read`.
-    unsafe fn ptr_from_read_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
-        // `read` is after `connect: Overlapped`.
-        (ptr as *mut Overlapped).wrapping_sub(1) as *const Inner
-    }
-
-    /// Same as [`ptr_from_conn_overlapped`] but for `Inner.write`.
-    unsafe fn ptr_from_write_overlapped(ptr: *mut OVERLAPPED) -> *const Inner {
-        // `read` is after `connect: Overlapped` and `read: Overlapped`.
-        (ptr as *mut Overlapped).wrapping_sub(2) as *const Inner
-    }
-}
-
 #[test]
 fn ptr_from() {
     use std::mem::ManuallyDrop;
