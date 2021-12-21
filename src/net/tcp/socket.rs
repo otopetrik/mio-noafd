@@ -60,6 +60,15 @@ impl TcpSocket {
         sys::tcp::new_v6_socket().map(|sys| TcpSocket { sys })
     }
 
+    #[allow(unused)]
+    pub(crate) fn new_for_addr(addr: SocketAddr) -> io::Result<TcpSocket> {
+        if addr.is_ipv4() {
+            TcpSocket::new_v4()
+        } else {
+            TcpSocket::new_v6()
+        }
+    }
+
     /// Bind `addr` to the TCP socket.
     pub fn bind(&self, addr: SocketAddr) -> io::Result<()> {
         sys::tcp::bind(self.sys, addr)
