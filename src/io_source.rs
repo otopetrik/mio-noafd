@@ -66,6 +66,48 @@ pub struct IoSource<T> {
     selector_id: SelectorId,
 }
 
+#[allow(unused)]
+impl<T> IoSource<T> {
+    /// Create a new `IoSource`.
+    pub fn new(io: T) -> IoSource<T> {
+        IoSource {
+            state: IoSourceState::new(),
+            inner: io,
+            #[cfg(debug_assertions)]
+            selector_id: SelectorId::new(),
+        }
+    }
+
+    /// Execute an I/O operations ensuring that the socket receives more events
+    /// if it hits a [`WouldBlock`] error.
+    ///
+    /// # Notes
+    ///
+    /// This method is required to be called for **all** I/O operations to
+    /// ensure the user will receive events once the socket is ready again after
+    /// returning a [`WouldBlock`] error.
+    ///
+    /// [`WouldBlock`]: io::ErrorKind::WouldBlock
+    pub fn do_io<F, R>(&self, f: F) -> io::Result<R>
+    where
+        F: FnOnce(&T) -> io::Result<R>,
+    {
+        self.state.do_io(f, &self.inner)
+    }
+
+    /// Returns the I/O source, dropping the state.
+    ///
+    /// # Notes
+    ///
+    /// To ensure no more events are to be received for this I/O source first
+    /// [`deregister`] it.
+    ///
+    /// [`deregister`]: Registry::deregister
+    pub fn into_inner(self) -> T {
+        self.inner
+    }
+}
+
 /// Be careful when using this method. All I/O operations that may block must go
 /// through the [`do_io`] method.
 ///
@@ -178,6 +220,13 @@ impl SelectorId {
     /// Value of `id` if `SelectorId` is not associated with any
     /// `sys::Selector`. Valid selector ids start at 1.
     const UNASSOCIATED: usize = 0;
+
+    /// Create a new `SelectorId`.
+    const fn new() -> SelectorId {
+        SelectorId {
+            id: AtomicUsize::new(Self::UNASSOCIATED),
+        }
+    }
 
     /// Associate an I/O source with `registry`, returning an error if its
     /// already registered.

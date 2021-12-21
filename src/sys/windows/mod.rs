@@ -216,7 +216,19 @@ unsafe fn no_notify_on_instant_completion(handle: winapi::um::winnt::HANDLE) -> 
 
 pub struct IoSourceState;
 
+#[allow(unused)]
 impl IoSourceState {
+    pub fn new() -> Self {
+        unimplemented!()
+    }
+
+    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
+    where
+        F: FnOnce(&T) -> io::Result<R>,
+    {
+        unimplemented!()
+    }
+
     pub fn register(
         &mut self,
         _registry: &Registry,
