@@ -14,6 +14,44 @@
 //! * `tcp` and `udp` modules: see the [`crate::net`] module.
 //! * `Waker`: see [`crate::Waker`].
 
+cfg_os_poll! {
+    #[allow(unused_macros)]
+    macro_rules! debug_detail {
+        (
+            $type: ident ($event_type: ty), $test: path,
+            $($(#[$target: meta])* $libc: ident :: $flag: ident),+ $(,)*
+        ) => {
+            struct $type($event_type);
+
+            impl fmt::Debug for $type {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    let mut written_one = false;
+                    $(
+                        $(#[$target])*
+                        #[allow(clippy::bad_bit_mask)] // Apparently some flags are zero.
+                        {
+                            // Windows doesn't use `libc` but the `afd` module.
+                            if $test(&self.0, &$libc :: $flag) {
+                                if !written_one {
+                                    write!(f, "{}", stringify!($flag))?;
+                                    written_one = true;
+                                } else {
+                                    write!(f, "|{}", stringify!($flag))?;
+                                }
+                            }
+                        }
+                    )+
+                    if !written_one {
+                        write!(f, "(empty)")
+                    } else {
+                        Ok(())
+                    }
+                }
+            }
+        };
+    }
+}
+
 #[cfg(unix)]
 cfg_os_poll! {
     mod unix;
