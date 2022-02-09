@@ -1,5 +1,5 @@
-trigger: ["master", "v0.6.x"]
-pr: ["master", "v0.6.x"]
+trigger: ["master", "v0.6.x", "v0.7.x"]
+pr: ["master", "v0.6.x", "v0.7.x"]
 
 jobs:
   # Check formatting
@@ -27,7 +27,7 @@ jobs:
       name: nightly
       displayName: Nightly
       # Pin nightly to avoid being impacted by breakage
-      rust_version: nightly-2019-11-14
+      rust_version: nightly-2021-11-05
       benches: true
 
   # This represents the minimum Rust version supported by
@@ -39,7 +39,7 @@ jobs:
     parameters:
       name: minrust
       displayName: Min Rust
-      rust_version: 1.39.0
+      rust_version: 1.46.0
       cmd: check
       cross: true
 

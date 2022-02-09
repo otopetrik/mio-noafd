@@ -7,8 +7,6 @@ use std::os::windows::io::AsRawSocket;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{fmt, io};
 
-#[cfg(any(unix, debug_assertions))]
-use crate::poll;
 use crate::sys::IoSourceState;
 use crate::{event, Interest, Registry, Token};
 
@@ -101,7 +99,9 @@ where
     ) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.associate(registry)?;
-        poll::selector(registry).register(self.inner.as_raw_fd(), token, interests)
+        registry
+            .selector()
+            .register(self.inner.as_raw_fd(), token, interests)
     }
 
     fn reregister(
@@ -112,13 +112,15 @@ where
     ) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.check_association(registry)?;
-        poll::selector(registry).reregister(self.inner.as_raw_fd(), token, interests)
+        registry
+            .selector()
+            .reregister(self.inner.as_raw_fd(), token, interests)
     }
 
     fn deregister(&mut self, registry: &Registry) -> io::Result<()> {
         #[cfg(debug_assertions)]
         self.selector_id.remove_association(registry)?;
-        poll::selector(registry).deregister(self.inner.as_raw_fd())
+        registry.selector().deregister(self.inner.as_raw_fd())
     }
 }
 
@@ -179,10 +181,18 @@ impl SelectorId {
     /// `sys::Selector`. Valid selector ids start at 1.
     const UNASSOCIATED: usize = 0;
 
+    /// Create a new `SelectorId`.
+    #[cfg(not(windows))]
+    const fn new() -> SelectorId {
+        SelectorId {
+            id: AtomicUsize::new(Self::UNASSOCIATED),
+        }
+    }
+
     /// Associate an I/O source with `registry`, returning an error if its
     /// already registered.
     fn associate(&self, registry: &Registry) -> io::Result<()> {
-        let registry_id = poll::selector(&registry).id();
+        let registry_id = registry.selector().id();
         let previous_id = self.id.swap(registry_id, Ordering::AcqRel);
 
         if previous_id == Self::UNASSOCIATED {
@@ -199,7 +209,7 @@ impl SelectorId {
     /// error if its registered with a different `Registry` or not registered at
     /// all.
     fn check_association(&self, registry: &Registry) -> io::Result<()> {
-        let registry_id = poll::selector(&registry).id();
+        let registry_id = registry.selector().id();
         let id = self.id.load(Ordering::Acquire);
 
         if id == registry_id {
@@ -220,7 +230,7 @@ impl SelectorId {
     /// Remove a previously made association from `registry`, returns an error
     /// if it was not previously associated with `registry`.
     fn remove_association(&self, registry: &Registry) -> io::Result<()> {
-        let registry_id = poll::selector(&registry).id();
+        let registry_id = registry.selector().id();
         let previous_id = self.id.swap(Self::UNASSOCIATED, Ordering::AcqRel);
 
         if previous_id == registry_id {

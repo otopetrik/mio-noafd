@@ -2,11 +2,9 @@
 edition = "2018"
 name = "mio"
 # When releasing to crates.io:
-# - Update html_root_url.
 # - Update CHANGELOG.md.
-# - Update doc URL.
 # - Create git tag
-version       = "0.7.11"
+version       = "0.8.0"
 license       = "MIT"
 authors       = [
   "Carl Lerche <me@carllerche.com>",
@@ -14,7 +12,6 @@ authors       = [
   "Tokio Contributors <team@tokio.rs>",
 ]
 description   = "Lightweight non-blocking IO"
-documentation = "https://docs.rs/mio/0.7.7"
 homepage      = "https://github.com/tokio-rs/mio"
 repository    = "https://github.com/tokio-rs/mio"
 readme        = "README.md"
@@ -41,14 +38,6 @@ os-ext = ["os-poll"]
 # Enables `mio::net` module containing networking primitives.
 net = []
 
-# Deprecated features, will be removed in a future version.
-extra-docs = [] # Docs are now always present.
-tcp = ["net"] # Replaced with "net" feature.
-udp = ["net"] # Replaced with "net" feature.
-uds = ["net"] # Replaced with "net" feature.
-pipe = ["os-ext"] # Replaced with "os-ext" feature.
-os-util = ["os-ext"]# Replaced with "os-ext" feature.
-
 [dependencies]
 iovec = "0.1.2"
 net2  = "0.2.33"
@@ -63,8 +52,8 @@ winapi = { version = "0.3", features = ["winsock2", "mswsock", "mstcpip"] }
 ntapi  = "0.3"
 
 [dev-dependencies]
-env_logger = { version = "0.6.2", default-features = false }
-rand = "0.4"
+env_logger = { version = "0.8.4", default-features = false }
+rand = "0.8"
 
 [package.metadata.docs.rs]
 all-features = true
@@ -74,14 +63,13 @@ targets = [
   "aarch64-linux-android",
   "x86_64-apple-darwin",
   "x86_64-pc-windows-msvc",
-  "x86_64-sun-solaris",
   "x86_64-unknown-dragonfly",
   "x86_64-unknown-freebsd",
+  "x86_64-unknown-illumos",
   "x86_64-unknown-linux-gnu",
   "x86_64-unknown-netbsd",
   "x86_64-unknown-openbsd",
 ]
-
 
 [package.metadata.playground]
 features = ["os-poll", "os-ext", "net"]

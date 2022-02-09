@@ -1,5 +1,5 @@
 # Targets available via Rustup that are supported.
-TARGETS ?= "aarch64-apple-ios" "aarch64-linux-android" "x86_64-apple-darwin" "x86_64-pc-windows-msvc" "x86_64-sun-solaris" "x86_64-unknown-freebsd" "x86_64-unknown-linux-gnu" "x86_64-unknown-netbsd"
+TARGETS ?= "aarch64-apple-ios" "aarch64-linux-android" "x86_64-apple-darwin" "x86_64-pc-windows-msvc" "x86_64-unknown-freebsd" "x86_64-unknown-illumos" "x86_64-unknown-linux-gnu" "x86_64-unknown-netbsd"
 
 test:
 	cargo test --all-features
@@ -7,13 +7,13 @@ test:
 # Test everything for the current OS/architecture and check all targets in
 # $TARGETS.
 test_all: check_all_targets
-	cargo hack test --feature-powerset --skip guide,extra-docs,tcp,udp,uds,pipe,os-util
-	cargo hack test --feature-powerset --skip guide,extra-docs,tcp,udp,uds,pipe,os-util --release
+	cargo hack test --feature-powerset
+	cargo hack test --feature-powerset --release
 
 # Check all targets using all features.
 check_all_targets: $(TARGETS)
 $(TARGETS):
-	cargo hack check --target $@ --feature-powerset --skip guide,extra-docs,tcp,udp,uds,pipe,os-util
+	cargo hack check --target $@ --feature-powerset
 
 # Installs all required targets for `check_all_targets`.
 install_targets:

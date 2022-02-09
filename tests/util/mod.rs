@@ -1,7 +1,8 @@
 // Not all functions are used by all tests.
 #![allow(dead_code, unused_macros)]
-#![cfg(any(feature = "os-poll", feature = "net"))]
+#![cfg(all(feature = "os-poll", feature = "net"))]
 
+use std::mem::size_of;
 use std::net::SocketAddr;
 use std::ops::BitOr;
 #[cfg(unix)]
@@ -13,6 +14,7 @@ use std::{env, fmt, fs, io};
 
 use log::{error, warn};
 use mio::event::Event;
+use mio::net::TcpStream;
 use mio::{Events, Interest, Poll, Token};
 
 pub fn init() {
@@ -66,14 +68,14 @@ impl ExpectEvent {
 #[derive(Debug)]
 pub struct Readiness(usize);
 
-const READABLE: usize = 0b00_000_001;
-const WRITABLE: usize = 0b00_000_010;
-const AIO: usize = 0b00_000_100;
-const LIO: usize = 0b00_001_000;
-const ERROR: usize = 0b00_010_000;
-const READ_CLOSED: usize = 0b00_100_000;
-const WRITE_CLOSED: usize = 0b01_000_000;
-const PRIORITY: usize = 0b10_000_000;
+const READABLE: usize = 0b0000_0001;
+const WRITABLE: usize = 0b0000_0010;
+const AIO: usize = 0b0000_0100;
+const LIO: usize = 0b0000_1000;
+const ERROR: usize = 0b00010000;
+const READ_CLOSED: usize = 0b0010_0000;
+const WRITE_CLOSED: usize = 0b0100_0000;
+const PRIORITY: usize = 0b1000_0000;
 
 impl Readiness {
     pub const READABLE: Readiness = Readiness(READABLE);
@@ -234,6 +236,53 @@ pub fn any_local_address() -> SocketAddr {
 /// Bind to any port on localhost, using a IPv6 address.
 pub fn any_local_ipv6_address() -> SocketAddr {
     "[::1]:0".parse().unwrap()
+}
+
+#[cfg(unix)]
+pub fn set_linger_zero(socket: &TcpStream) {
+    let val = libc::linger {
+        l_onoff: 1,
+        l_linger: 0,
+    };
+    let res = unsafe {
+        libc::setsockopt(
+            socket.as_raw_fd(),
+            libc::SOL_SOCKET,
+            #[cfg(target_vendor = "apple")]
+            libc::SO_LINGER_SEC,
+            #[cfg(not(target_vendor = "apple"))]
+            libc::SO_LINGER,
+            &val as *const libc::linger as *const libc::c_void,
+            size_of::<libc::linger>() as libc::socklen_t,
+        )
+    };
+    assert_eq!(res, 0);
+}
+
+#[cfg(windows)]
+pub fn set_linger_zero(socket: &TcpStream) {
+    use std::os::windows::io::AsRawSocket;
+    use winapi::um::winsock2::{linger, setsockopt, SOCKET_ERROR, SOL_SOCKET, SO_LINGER};
+
+    let val = linger {
+        l_onoff: 1,
+        l_linger: 0,
+    };
+
+    let res = unsafe {
+        setsockopt(
+            socket.as_raw_socket() as _,
+            SOL_SOCKET,
+            SO_LINGER,
+            &val as *const _ as *const _,
+            size_of::<linger>() as _,
+        )
+    };
+    assert!(
+        res != SOCKET_ERROR,
+        "error setting linger: {}",
+        io::Error::last_os_error()
+    );
 }
 
 /// Returns a path to a temporary file using `name` as filename.

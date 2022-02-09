@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         Linux:
-          vmImage: ubuntu-16.04
+          vmImage: ubuntu-18.04
 
         ${{ if parameters.cross }}:
           MacOS:
@@ -28,8 +28,10 @@ jobs:
 
       - ${{ if eq(parameters.cmd, 'test') }}:
           - script: |
-              cargo install cargo-hack
-              cargo hack check --feature-powerset --skip guide,extra-docs,tcp,udp,uds,pipe,os-util
+              # Cargo-hack's dependency bitflags has a higher MSVR then us.
+              rustup install nightly
+              rustup run nightly cargo install cargo-hack
+              cargo hack check --feature-powerset
             displayName: Check feature powerset
 
       - script: cargo ${{ parameters.cmd }} --all-features

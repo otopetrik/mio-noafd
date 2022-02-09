@@ -1,17 +1,14 @@
 #![cfg(all(feature = "os-poll", feature = "net"))]
 
 use std::io::{self, IoSlice, IoSliceMut, Read, Write};
-use std::mem::forget;
 use std::net::{self, Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd};
-#[cfg(windows)]
-use std::os::windows::io::{AsRawSocket, FromRawSocket};
 use std::sync::{mpsc::channel, Arc, Barrier};
 use std::thread;
 use std::time::Duration;
 
-use mio::net::{TcpSocket, TcpStream};
+use mio::net::TcpStream;
 use mio::{Interest, Token};
 
 #[macro_use]
@@ -21,7 +18,7 @@ use util::init;
 use util::{
     any_local_address, any_local_ipv6_address, assert_send, assert_socket_close_on_exec,
     assert_socket_non_blocking, assert_sync, assert_would_block, expect_events, expect_no_events,
-    init_with_poll, ExpectEvent, Readiness,
+    init_with_poll, set_linger_zero, ExpectEvent, Readiness,
 };
 
 const DATA1: &[u8] = b"Hello world!";
@@ -91,7 +88,7 @@ where
     assert_eq!(stream.peer_addr().unwrap(), addr);
     assert!(stream.local_addr().unwrap().ip().is_loopback());
 
-    checked_write!(stream.write(&DATA1));
+    checked_write!(stream.write(DATA1));
 
     stream.flush().unwrap();
 
@@ -108,7 +105,7 @@ where
 
     assert_would_block(stream.read(&mut buf));
 
-    let bufs = [IoSlice::new(&DATA1), IoSlice::new(&DATA2)];
+    let bufs = [IoSlice::new(DATA1), IoSlice::new(DATA2)];
     let n = stream
         .write_vectored(&bufs)
         .expect("unable to write vectored to stream");
@@ -146,7 +143,7 @@ fn set_get_ttl() {
     let mut stream = TcpStream::connect(address).unwrap();
 
     // on Windows: the stream must be connected before setting the ttl, otherwise
-    // it is undefined behavior, register and expect a WRITABLE here to make sure
+    // it is unspecified behavior, register and expect a WRITABLE here to make sure
     // the stream is connected
     poll.registry()
         .register(&mut stream, ID1, Interest::WRITABLE)
@@ -178,7 +175,7 @@ fn get_ttl_without_previous_set() {
     let mut stream = TcpStream::connect(address).unwrap();
 
     // on Windows: the stream must be connected before getting the ttl, otherwise
-    // it is undefined behavior, register and expect a WRITABLE here to make sure
+    // it is unspecified behavior, register and expect a WRITABLE here to make sure
     // the stream is connected
     poll.registry()
         .register(&mut stream, ID1, Interest::WRITABLE)
@@ -208,7 +205,7 @@ fn set_get_nodelay() {
     let mut stream = TcpStream::connect(address).unwrap();
 
     // on Windows: the stream must be connected before setting the nodelay, otherwise
-    // it is undefined behavior, register and expect a WRITABLE here to make sure
+    // it is unspecified behavior, register and expect a WRITABLE here to make sure
     // the stream is connected
     poll.registry()
         .register(&mut stream, ID1, Interest::WRITABLE)
@@ -240,7 +237,7 @@ fn get_nodelay_without_previous_set() {
     let mut stream = TcpStream::connect(address).unwrap();
 
     // on Windows: the stream must be connected before setting the nodelay, otherwise
-    // it is undefined behavior, register and expect a WRITABLE here to make sure
+    // it is unspecified behavior, register and expect a WRITABLE here to make sure
     // the stream is connected
     poll.registry()
         .register(&mut stream, ID1, Interest::WRITABLE)
@@ -280,7 +277,7 @@ fn shutdown_read() {
         vec![ExpectEvent::new(ID1, Interest::WRITABLE)],
     );
 
-    checked_write!(stream.write(&DATA2));
+    checked_write!(stream.write(DATA2));
 
     expect_events(
         &mut poll,
@@ -328,7 +325,7 @@ fn shutdown_write() {
         vec![ExpectEvent::new(ID1, Interest::WRITABLE)],
     );
 
-    checked_write!(stream.write(&DATA1));
+    checked_write!(stream.write(DATA1));
 
     stream.shutdown(Shutdown::Write).unwrap();
 
@@ -368,7 +365,7 @@ fn shutdown_both() {
         vec![ExpectEvent::new(ID1, Interest::WRITABLE)],
     );
 
-    checked_write!(stream.write(&DATA1));
+    checked_write!(stream.write(DATA1));
 
     expect_events(
         &mut poll,
@@ -498,7 +495,7 @@ fn no_events_after_deregister() {
     assert_would_block(stream.peek(&mut buf));
     assert_would_block(stream.read(&mut buf));
 
-    checked_write!(stream.write(&DATA1));
+    checked_write!(stream.write(DATA1));
     stream.flush().unwrap();
 
     expect_no_events(&mut poll, &mut events);
@@ -545,12 +542,7 @@ fn tcp_shutdown_client_read_close_event() {
 #[test]
 #[cfg_attr(windows, ignore = "fails; client write_closed events are not found")]
 #[cfg_attr(
-    any(
-        target_os = "android",
-        target_os = "illumos",
-        target_os = "linux",
-        target_os = "solaris"
-    ),
+    any(target_os = "android", target_os = "illumos", target_os = "linux"),
     ignore = "fails; client write_closed events are not found"
 )]
 fn tcp_shutdown_client_write_close_event() {
@@ -799,14 +791,4 @@ fn hup_event_on_disconnect() {
         &mut events,
         vec![ExpectEvent::new(Token(1), Interest::READABLE)],
     );
-}
-
-fn set_linger_zero(socket: &TcpStream) {
-    #[cfg(windows)]
-    let s = unsafe { TcpSocket::from_raw_socket(socket.as_raw_socket()) };
-    #[cfg(unix)]
-    let s = unsafe { TcpSocket::from_raw_fd(socket.as_raw_fd()) };
-
-    s.set_linger(Some(Duration::from_millis(0))).unwrap();
-    forget(s);
 }

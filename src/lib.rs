@@ -1,4 +1,3 @@
-#![doc(html_root_url = "https://docs.rs/mio/0.7.11")]
 #![deny(
     // missing_docs,
     missing_debug_implementations,
@@ -45,10 +44,9 @@
 #[macro_use]
 mod macros;
 
-#[macro_use]
-mod sys;
 mod interest;
 mod poll;
+mod sys;
 mod token;
 mod waker;
 
@@ -175,8 +173,8 @@ pub mod guide {
     //!
     //! [event source]: ../event/trait.Source.html
     //!
-    #![cfg_attr(all(feature = "os-poll", features = "net"), doc = "```")]
-    #![cfg_attr(not(all(feature = "os-poll", features = "net")), doc = "```ignore")]
+    #![cfg_attr(all(feature = "os-poll", feature = "net"), doc = "```")]
+    #![cfg_attr(not(all(feature = "os-poll", feature = "net")), doc = "```ignore")]
     //! # use mio::net::TcpListener;
     //! # use mio::{Poll, Token, Interest};
     //! # fn main() -> std::io::Result<()> {
@@ -214,8 +212,8 @@ pub mod guide {
     //! [poll]: ../struct.Poll.html#method.poll
     //! [event sources]: ../event/trait.Source.html
     //!
-    #![cfg_attr(all(feature = "os-poll", features = "net"), doc = "```")]
-    #![cfg_attr(not(all(feature = "os-poll", features = "net")), doc = "```ignore")]
+    #![cfg_attr(all(feature = "os-poll", feature = "net"), doc = "```")]
+    #![cfg_attr(not(all(feature = "os-poll", feature = "net")), doc = "```ignore")]
     //! # use std::io;
     //! # use std::time::Duration;
     //! # use mio::net::TcpListener;

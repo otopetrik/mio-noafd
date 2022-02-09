@@ -210,7 +210,7 @@ impl event::Source for Registration {
         interests: Interest,
     ) -> io::Result<()> {
         self.inner.update(
-            &poll::selector(registry).readiness_queue,
+            &registry.selector().readiness_queue,
             token,
             Ready::from_interests(interests),
             PollOpt::edge(),
@@ -224,7 +224,7 @@ impl event::Source for Registration {
         interests: Interest,
     ) -> io::Result<()> {
         self.inner.update(
-            &poll::selector(registry).readiness_queue,
+            &registry.selector().readiness_queue,
             token,
             Ready::from_interests(interests),
             PollOpt::edge(),
@@ -233,7 +233,7 @@ impl event::Source for Registration {
 
     fn deregister(&mut self, registry: &poll::Registry) -> io::Result<()> {
         self.inner.update(
-            &poll::selector(registry).readiness_queue,
+            &registry.selector().readiness_queue,
             Token(0),
             Ready::EMPTY,
             PollOpt::empty(),
