@@ -467,18 +467,15 @@ impl Events {
 }
 
 macro_rules! overlapped2arc {
-    ($e:expr, $t:ty, $($field:ident).+) => ({
-        let offset = offset_of!($t, $($field).+);
+    ($e:expr, $t:ty, $field:ident) => ({
+        let temp = ::std::mem::MaybeUninit::<$t>::uninit();
+        let temp_ptr = temp.as_ptr();
+        let offset = ::std::ptr::addr_of!((*temp_ptr).$field) as usize - temp_ptr as usize;
         debug_assert!(offset < mem::size_of::<$t>());
         FromRawArc::from_raw(($e as usize - offset) as *mut $t)
     })
 }
 
-macro_rules! offset_of {
-    ($t:ty, $($field:ident).+) => (
-        &(*(0 as *const $t)).$($field).+ as *const _ as usize
-    )
-}
 #[repr(C)]
 pub(crate) struct Overlapped {
     inner: UnsafeCell<miow::Overlapped>,

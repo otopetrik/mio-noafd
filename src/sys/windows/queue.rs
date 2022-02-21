@@ -7,9 +7,18 @@ use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize};
 use std::sync::Arc;
 use std::{fmt, io, isize, mem, ops, process, ptr, usize};
 
-#[derive(Clone)]
 pub(crate) struct ReadinessQueue {
     inner: Arc<ReadinessQueueInner>,
+    is_queue_owner: bool,
+}
+
+impl Clone for ReadinessQueue {
+    fn clone(&self) -> ReadinessQueue {
+        ReadinessQueue {
+            inner: self.inner.clone(),
+            is_queue_owner: false,
+        }
+    }
 }
 
 unsafe impl Send for ReadinessQueue {}
@@ -600,6 +609,7 @@ impl ReadinessQueue {
         let ptr = &*end_marker as *const _ as *mut _;
 
         Ok(ReadinessQueue {
+            is_queue_owner: true,
             inner: Arc::new(ReadinessQueueInner {
                 waker: sys::Waker::new_priv(selector, WAKE),
                 head_readiness: AtomicPtr::new(ptr),
@@ -787,6 +797,9 @@ impl fmt::Debug for ReadinessQueue {
 
 impl Drop for ReadinessQueue {
     fn drop(&mut self) {
+        if !self.is_queue_owner {
+            return;
+        }
         // Close the queue by enqueuing the closed node
         self.inner.enqueue_node(&*self.inner.closed_marker);
 
