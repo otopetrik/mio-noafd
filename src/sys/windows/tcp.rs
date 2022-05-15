@@ -353,6 +353,13 @@ impl TcpStream {
         self.imp.schedule_write(intermediate, 0, me);
         Ok(len)
     }
+
+    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
+    where
+        F: FnOnce(&T) -> io::Result<R>,
+    {
+        f(io)
+    }
 }
 
 impl Read for TcpStream {
