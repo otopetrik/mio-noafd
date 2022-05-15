@@ -334,11 +334,11 @@ impl UdpSocket {
         }
     }
 
-    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
+    pub fn try_io<T, F>(&self, f: F) -> io::Result<T>
     where
-        F: FnOnce(&T) -> io::Result<R>,
+        F: FnOnce() -> io::Result<T>,
     {
-        f(io)
+        f()
     }
 }
 
