@@ -496,9 +496,6 @@ use std::os::windows::raw::SOCKET as StdSocket; // winapi uses usize, stdlib use
 use winapi::um::winsock2::{bind as win_bind, closesocket, SOCKET_ERROR, SOCK_DGRAM};
 
 use crate::sys::windows::net::{init, new_ip_socket, socket_addr};
-use windows_sys::Win32::Networking::WinSock::{
-    bind as win_bind, closesocket, getsockopt, IPPROTO_IPV6, IPV6_V6ONLY, SOCKET_ERROR, SOCK_DGRAM,
-};
 
 pub fn bind(addr: SocketAddr) -> io::Result<net::UdpSocket> {
     init();

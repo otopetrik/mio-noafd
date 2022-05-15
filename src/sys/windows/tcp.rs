@@ -1188,7 +1188,7 @@ pub(crate) fn connect(socket: TcpSocket, addr: SocketAddr) -> io::Result<net::Tc
 
 pub(crate) fn listen(socket: TcpSocket, backlog: u32) -> io::Result<net::TcpListener> {
     use std::convert::TryInto;
-    use WinSock::listen;
+    use winsock2::listen;
 
     let backlog = backlog.try_into().unwrap_or(i32::max_value());
     syscall!(listen(socket, backlog), PartialEq::eq, SOCKET_ERROR)?;
