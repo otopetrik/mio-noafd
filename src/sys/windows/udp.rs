@@ -333,6 +333,13 @@ impl UdpSocket {
             }
         }
     }
+
+    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
+    where
+        F: FnOnce(&T) -> io::Result<R>,
+    {
+        f(io)
+    }
 }
 
 impl Imp {
@@ -376,13 +383,6 @@ impl Imp {
     // See comments in tcp::StreamImp::push
     fn add_readiness(&self, me: &Inner, set: Ready) {
         me.iocp.set_readiness(set | me.iocp.readiness());
-    }
-
-    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
-    where
-        F: FnOnce(&T) -> io::Result<R>,
-    {
-        f(io)
     }
 }
 
