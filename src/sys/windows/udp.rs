@@ -82,6 +82,10 @@ impl UdpSocket {
         self.imp.inner.socket.local_addr()
     }
 
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.imp.inner.socket.peer_addr()
+    }
+
     pub fn try_clone(&self) -> io::Result<UdpSocket> {
         self.imp.inner.socket.try_clone().map(UdpSocket::from_std)
     }
@@ -372,6 +376,13 @@ impl Imp {
     // See comments in tcp::StreamImp::push
     fn add_readiness(&self, me: &Inner, set: Ready) {
         me.iocp.set_readiness(set | me.iocp.readiness());
+    }
+
+    pub fn do_io<T, F, R>(&self, f: F, io: &T) -> io::Result<R>
+    where
+        F: FnOnce(&T) -> io::Result<R>,
+    {
+        f(io)
     }
 }
 
