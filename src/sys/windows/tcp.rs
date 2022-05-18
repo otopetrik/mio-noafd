@@ -150,8 +150,9 @@ impl TcpStream {
         // TODO: Safety
         let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as RawSocket) };
         os_socket.set_nonblocking(true)?;
-        let socket = os_socket.into_raw_socket();
-        connect(socket as usize, addr).map(|s| TcpStream::new(s, Some(addr)))
+        // let socket = os_socket.into_raw_socket();
+        // connect(socket as usize, addr).map(|s| TcpStream::new(s, Some(addr)))
+        Ok(TcpStream::new(os_socket, Some(addr)))
     }
 
     pub fn from_std(stream: net::TcpStream) -> TcpStream {
@@ -1178,6 +1179,7 @@ pub(crate) fn bind(socket: TcpSocket, addr: SocketAddr) -> io::Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub(crate) fn connect(socket: TcpSocket, addr: SocketAddr) -> io::Result<net::TcpStream> {
     use winsock2::connect;
 
