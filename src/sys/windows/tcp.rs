@@ -135,6 +135,7 @@ impl TcpStream {
     }
 
     pub(crate) fn connect_mio(socket: TcpSocket, addr: SocketAddr) -> io::Result<TcpStream> {
+        bind_any(socket, addr)?;
         // TODO: Safety
         let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as RawSocket) };
         os_socket.set_nonblocking(true)?;
@@ -145,6 +146,7 @@ impl TcpStream {
 
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
         let socket = new_for_addr(addr)?;
+        bind_any(socket, addr)?;
         // TODO: Safety
         let os_socket = unsafe { ::std::net::TcpStream::from_raw_socket(socket as RawSocket) };
         os_socket.set_nonblocking(true)?;
@@ -1155,6 +1157,13 @@ pub(crate) fn new_v4_socket() -> io::Result<TcpSocket> {
 pub(crate) fn new_v6_socket() -> io::Result<TcpSocket> {
     init();
     new_socket(PF_INET6, SOCK_STREAM).map(From::from)
+}
+
+fn bind_any(socket: TcpSocket, peer: SocketAddr) -> io::Result<()> {
+    match peer {
+        SocketAddr::V4(_) => bind(socket, SocketAddr::new([0; 4].into(), 0)),
+        SocketAddr::V6(_) => bind(socket, SocketAddr::new([0; 16].into(), 0)),
+    }
 }
 
 pub(crate) fn bind(socket: TcpSocket, addr: SocketAddr) -> io::Result<()> {
