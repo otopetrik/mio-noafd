@@ -15,7 +15,6 @@ use std::sync::{Arc, Mutex};
 use crate::{Interest, Token};
 use miow::pipe;
 use winapi::shared::winerror::{ERROR_BROKEN_PIPE, ERROR_PIPE_LISTENING};
-use winapi::um::ioapiset::CancelIoEx;
 
 /// Non-blocking windows named pipe.
 ///
@@ -501,7 +500,7 @@ impl Inner {
 }
 
 unsafe fn cancel<T: AsRawHandle>(handle: &T, overlapped: &Overlapped) -> io::Result<()> {
-    let ret = CancelIoEx(handle.as_raw_handle(), overlapped.as_ptr() as *mut _);
+    let ret =  winapi::um::ioapiset::CancelIo(handle.as_raw_handle());
     // `CancelIoEx` returns 0 on error:
     // https://docs.microsoft.com/en-us/windows/win32/fileio/cancelioex-func
     if ret == 0 {

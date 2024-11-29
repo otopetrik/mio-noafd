@@ -191,7 +191,7 @@ enum Family {
 
 unsafe fn cancel(socket: &dyn AsRawSocket, overlapped: &Overlapped) -> io::Result<()> {
     let handle = socket.as_raw_socket() as winapi::um::winnt::HANDLE;
-    let ret = winapi::um::ioapiset::CancelIoEx(handle, overlapped.as_mut_ptr());
+    let ret = winapi::um::ioapiset::CancelIo(handle);
     if ret == 0 {
         Err(io::Error::last_os_error())
     } else {

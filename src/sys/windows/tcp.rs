@@ -760,8 +760,9 @@ impl event::Source for TcpStream {
         )?;
 
         unsafe {
-            super::no_notify_on_instant_completion(self.imp.inner.socket.as_raw_socket() as HANDLE)?;
-            me.instant_notify = true;
+            // NOTE: Not on Windows XP.
+            //super::no_notify_on_instant_completion(self.imp.inner.socket.as_raw_socket() as HANDLE)?;
+            //me.instant_notify = true;
         }
 
         // If we were connected before being registered process that request
